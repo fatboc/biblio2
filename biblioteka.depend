@@ -1,0 +1,23 @@
+# depslib dependency file v1.0
+1508536636 source:/home/fatusia/Documents/biblioteka/main.cpp
+	"header.hpp"
+
+1508536074 /home/fatusia/Documents/biblioteka/header.hpp
+	<iostream>
+	<ncurses.h>
+	<menu.h>
+	<form.h>
+	<vector>
+	<deque>
+	<fstream>
+	<limits>
+	<cstring>
+	<string>
+	<cstdlib>
+
+1508534532 source:/home/fatusia/Documents/biblioteka/user.cpp
+	"header.hpp"
+
+1508536074 source:/home/fatusia/Documents/biblioteka/data.cpp
+	"header.hpp"
+
