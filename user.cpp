@@ -30,11 +30,10 @@ int find_longest(char ** tab, int n){
     return len;
 }
 
-int menu_create(char * choices[], int n, char * header){
+int menu_create(WINDOW * menu_window, char * choices[], int n, char * header){
 //tworzenie dowolnego menu programu
     ITEM **items;
 	MENU *this_menu;
-	WINDOW *menu_window;
 
 	items = (ITEM **)calloc(n + 1, sizeof(ITEM *));
 	for(int i = 0; i < n; ++i)
@@ -43,7 +42,6 @@ int menu_create(char * choices[], int n, char * header){
     }
 	items[n] = (ITEM *)NULL;
 
-	menu_window = newwin(LINES-1, COLS, 0, 0);
 	keypad(menu_window, TRUE);
 	this_menu = new_menu((ITEM **)items);
 
@@ -101,7 +99,8 @@ int menu_create(char * choices[], int n, char * header){
 	return x;
 }
 
-int menu_main(deque <kategoria> &kategorie, deque <klient> &klienci, deque <ksiazka> &ksiazki){
+int menu_main(vector <kategoria*> &kategorie, vector <klient*> &klienci, vector <ksiazka*> &ksiazki){
+    WINDOW * menu_window;
     char * choices[] = {
                         "Przegladaj ksiazki",
                         "Przegladaj klientow",
@@ -109,19 +108,20 @@ int menu_main(deque <kategoria> &kategorie, deque <klient> &klienci, deque <ksia
                         "Zapisz",
                         "Zakoncz",
         };
-    int x = menu_create(choices, 5, "Witaj w Bibliotece!");
+    menu_window = newwin(LINES-1, COLS, 0, 0);
+    int x = menu_create(menu_window, choices, 5, "Witaj w Bibliotece!");
 
     switch (x){
         case 0:
-        menu_ksiazki(ksiazki);
+        menu_ksiazki(menu_window, ksiazki);
         break;
 
         case 1:
-        menu_klienci(klienci);
+        menu_klienci(menu_window, klienci);
         break;
 
         case 2:
-        menu_kategorie(kategorie);
+        menu_kategorie(menu_window, kategorie);
         break;
 
         case 3:
@@ -139,7 +139,7 @@ int menu_main(deque <kategoria> &kategorie, deque <klient> &klienci, deque <ksia
         menu_main(kategorie, klienci, ksiazki);
         break;
     }
-
+    delwin(menu_window);
     return x;
 }
 
@@ -391,18 +391,18 @@ int list_view(char * header, char * list_choices[], int n, char * guide){
         return x;
 }
 
-int menu_kategorie(deque <kategoria>& kategorie){
+int menu_kategorie(WINDOW * window, vector <kategoria*>& kategorie){
     char ** list_choices = cat_choices(kategorie);
     char * fields[] = {"Symbol", "Nazwa"};
     int result, x=-1, check;
 
-    result = list_view("KATEGORIE", list_choices, kategorie.size(), "#   Symbol   Nazwa");
+    result = list_view("KATEGORIE", list_choices, (kategorie).size(), "#   Symbol   Nazwa");
 
     do{
     check = 0;
     if(result>0){
         do{
-            x = item_details<kategoria>(kategorie[result-1], "KATEGORIA", 3);
+            x = item_details<kategoria>(window, kategorie[result-1], "KATEGORIA", 3);
                 switch (x){
                     case 0:
                         item_form(2, "EDYTUJ", fields);
@@ -412,11 +412,11 @@ int menu_kategorie(deque <kategoria>& kategorie){
                         if(usun()==1)
                             x = -1;
                         else
-                            menu_kategorie(kategorie);
+                            menu_kategorie(window, kategorie);
                         break;
                         }
                     case 2:
-                        menu_kategorie(kategorie);
+                        menu_kategorie(window, kategorie);
                         break;
                 }
         }while (x<0);
@@ -428,14 +428,14 @@ int menu_kategorie(deque <kategoria>& kategorie){
             {
                 char * choices[] = {"Numeru", "Symbolu", "Nazwy"};
                 dialog(choices, 3, "SORTUJ", "Sortuj wedlug:");
-                menu_kategorie(kategorie);
+                menu_kategorie(window, kategorie);
             }
             break;
             case -2:
             {
                 char * choices[] = {"OK"};
                 dialog(choices, 1, "FILTRUJ", "Brak dostepnych filtrow.");
-                menu_kategorie(kategorie);
+                menu_kategorie(window, kategorie);
             }
             case -3:
             {
@@ -444,7 +444,7 @@ int menu_kategorie(deque <kategoria>& kategorie){
                 break;
             }
             case -4:
-                menu_kategorie(kategorie);
+                menu_kategorie(window, kategorie);
                 break;
         }
         }while (check!=0);
@@ -452,20 +452,18 @@ int menu_kategorie(deque <kategoria>& kategorie){
     return 0;
 }
 
-int menu_klienci(deque <klient> &klienci){
-    char * list_choices[] = {"   1   213      Jan        Kowalski",
-                            "   2   214      Anna       Nowak",
-                            "   3   215      Adam       Nowak"};
+int menu_klienci(WINDOW * window, vector <klient*> &klienci){
+    char ** list_choices= client_choices(klienci);
     char * fields[] = {"Imie", "Nazwisko", "Adres", "Telefon", "Nr karty"};
     int result, x=-1, check;
 
-    result = list_view("KLIENCI", list_choices, 2, "#  Nr karty  Imie         Nazwisko");
+    result = list_view("KLIENCI", list_choices, klienci.size(), "#  Nr karty  Imie         Nazwisko");
 
     do{
     check=0;
     if(result>0){
         do{
-//            x = item_details(list_choices[result-1], "KLIENCI");
+            x = item_details<Klient>(window, klienci[result-1], "KLIENCI", 2);
                 switch (x){
                     case 0:
                         item_form(5, "EDYTUJ", fields);
@@ -475,11 +473,11 @@ int menu_klienci(deque <klient> &klienci){
                         if(usun()==1)
                             x = -1;
                         else
-                            menu_klienci(klienci);
+                            menu_klienci(window, klienci);
                         break;
                         }
                     case 2:
-                        menu_klienci(klienci);
+                        menu_klienci(window, klienci);
                         break;
                 }
         }while (x<0);
@@ -492,14 +490,14 @@ int menu_klienci(deque <klient> &klienci){
             {
                 char * choices[] = {"Numeru", "Nr karty", "Imienia", "Nazwiska"};
                 dialog(choices, 4, "SORTUJ", "Sortuj wedlug:");
-                menu_klienci(klienci);
+                menu_klienci(window, klienci);
             }
             break;
             case -2:
             {
                 char * choices[] = {"Tylko wypozyczajacy", "Tylko zadluzeni"};
                 dialog(choices, 2, "FILTRUJ", "Filtruj:");
-                menu_klienci(klienci);
+                menu_klienci(window, klienci);
             }
             case -3:
             {
@@ -508,7 +506,7 @@ int menu_klienci(deque <klient> &klienci){
                 break;
             }
             case -4:
-                menu_klienci(klienci);
+                menu_klienci(window, klienci);
                 break;
         }
     }while(check!=0);
@@ -516,9 +514,8 @@ int menu_klienci(deque <klient> &klienci){
     return 0;
 }
 
-int menu_ksiazki(deque <ksiazka> &ksiazki){
-    char * list_choices[] = {"   1  A.Mickiewicz   Pan Tadeusz",
-                            "   2   S.Hawking     Krotka historia czasu"};
+int menu_ksiazki(WINDOW * window, vector <ksiazka*> &ksiazki){
+    char ** list_choices = book_choices(ksiazki);
     char * fields[] = {"Autor", "Tytul", "Nr kat.", "Rok wydania"};
     int result, x=-1, check;
 
@@ -528,7 +525,7 @@ int menu_ksiazki(deque <ksiazka> &ksiazki){
     check = 0;
     if(result>0){
         do{
-//            x = item_details(list_choices[result-1], "KSIAZKI");
+            x = item_details<ksiazka>(window, ksiazki[result-1], "KSIAZKI", 1);
                 switch (x){
                     case 0:
                         item_form(4, "EDYTUJ", fields);
@@ -538,11 +535,11 @@ int menu_ksiazki(deque <ksiazka> &ksiazki){
                         if(usun()==1)
                             x = -1;
                         else
-                            menu_ksiazki(ksiazki);
+                            menu_ksiazki(window, ksiazki);
                         break;
                         }
                     case 2:
-                        menu_ksiazki(ksiazki);
+                        menu_ksiazki(window, ksiazki);
                         break;
                 }
         }while (x<0);
@@ -554,14 +551,14 @@ int menu_ksiazki(deque <ksiazka> &ksiazki){
             {
                 char * choices[] = {"Numeru", "Autora", "Tytulu"};
                 dialog(choices, 3, "SORTUJ", "Sortuj wedlug:");
-                menu_ksiazki(ksiazki);
+                menu_ksiazki(window, ksiazki);
             }
             break;
             case -2:
             {
                 char * choices[] = {"Tylko wypozyczone", "Tylko zadluzone", "Tylko dostepne"};
                 dialog(choices, 3, "FILTRUJ", "Filtruj:");
-                menu_ksiazki(ksiazki);
+                menu_ksiazki(window, ksiazki);
             }
             case -3:
             {
@@ -571,7 +568,7 @@ int menu_ksiazki(deque <ksiazka> &ksiazki){
             }
             case -4:
                 add_item();
-                menu_ksiazki(ksiazki);
+                menu_ksiazki(window, ksiazki);
                 break;
         }
         }while(check!=0);
@@ -587,8 +584,8 @@ void clear_guide(){
 }
 
 template <typename T>
-int item_details(T item, char * header, int mode){
-    WINDOW *window, *menu_window;
+int item_details(WINDOW * window, T *item, char * header, int mode){
+    WINDOW *menu_window;
     MENU* menu;
     ITEM ** items;
     char * menu_choices[] = {"Edytuj", "Usun", "Wroc"};
@@ -608,18 +605,7 @@ int item_details(T item, char * header, int mode){
 	mvprintw(LINES - 1, 1, "Nawigacja: strzalki w bok, ENTER by dokonac wyboru");
     mvwprintw(window, 1, (width-5)/2,"%s", header);
 
-    if (mode == KSIAZKA){
-
-    }
-
-    else if (mode == KLIENT){
-
-    }
-
-    else if (mode == KATEGORIA){
-        mvwprintw(window, 5, 2, "Symbol:\t%s\n", item.symbol.c_str());
-        mvwprintw(window, 7, 2, "%s\t%s\n", "Nazwa:", item.nazwa.c_str());
-    }
+    item->print(window);
 
     //gorne menu
 
@@ -674,8 +660,6 @@ int item_details(T item, char * header, int mode){
         free_item(items[i]);
 
 	free_menu(menu);
-
-	delwin(window);
 
         return x;
 
