@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <typeinfo>
 #include <algorithm>
+#include <time.h>
 
 #define KSIAZKA 1
 #define KLIENT 2
@@ -21,19 +22,24 @@ typedef struct Ksiazka ksiazka;
 typedef struct Klient klient;
 typedef struct Kategoria kategoria;
 
-struct Ksiazka{
+struct Ksiazka
+{
     string tytul;
     string autor;
-    int rok_wydania;
+    string rok_wydania;
     int id;
     bool dostepnosc;
     klient * wypozyczajacy;
     kategoria * kat;
     time_t pozyczona;
     void print(WINDOW *);
+    void modify(vector<char*> data);
+    size_t wyszukaj (string text);
+    bool check();
 };
 
-struct Klient{
+struct Klient
+{
     string imie;
     string nazwisko;
     string adres;
@@ -41,15 +47,25 @@ struct Klient{
     int id;
     vector <ksiazka*> pozyczone;
     void print(WINDOW*);
+    void modify(vector<char*> data);
+    size_t wyszukaj(string text);
+    bool check();
 };
 
-struct Kategoria{
+struct Kategoria
+{
     string symbol;
     string nazwa;
     vector <ksiazka*> nalezace;
     void print(WINDOW*);
     bool cat_find(string);
+    void modify(vector<char*> data);
+    size_t wyszukaj(string text);
+    bool check();
+
 };
+
+
 
 
 //user.cpp
@@ -65,15 +81,20 @@ int menu_kategorie(WINDOW * window, vector <kategoria*>&);
 void clear_guide();
 int find_longest(char **, int);
 int menu_klienci(WINDOW * window, vector <klient*>&);
-int menu_ksiazki(WINDOW * window, vector <ksiazka*>&);
+int menu_ksiazki(WINDOW * window, vector <ksiazka*>&, vector <kategoria*>&, vector <klient*>);
 template <typename T>
-int item_details(WINDOW * window, T *item, char *, int mode);
+int item_details(WINDOW * window, T *item, char *, int mode, char **);
 int zapisz();
 int usun();
-int item_form(int, char*, char**);
-int sdialog();
-int item_search();
-int add_item();
+template <typename T>
+int item_form(T *item, int, char*, char**, const char **);
+string sdialog();
+int cat_search(vector <kategoria*>&);
+int book_search(vector<ksiazka*>&, vector <ksiazka*>&, int);
+int client_search(vector <klient*>&, vector <klient*>&, int);
+int add_book(vector <ksiazka*>&, vector <kategoria*>&);
+int add_cat(vector <kategoria *>&);
+int add_client(vector <klient*> &);
 
 //data.cpp
 vector<kategoria> * import_cat(vector <kategoria>*);
@@ -83,4 +104,12 @@ int import(vector <kategoria*> &, vector <klient*> &, vector <ksiazka*> &);
 char ** cat_choices(vector <kategoria*>&);
 char ** book_choices(vector <ksiazka*>);
 char ** client_choices(vector <klient*>);
-void add_book();
+char * trim(char *);
+void sort_nazwa(vector<kategoria *>&);
+void sort_symbol(vector<kategoria *>&);
+void sort_cid(vector<klient*>& klienci);
+void sort_imie(vector<klient*>& klienci);
+void sort_nazwisko(vector<klient*>& klienci);
+void sort_bid(vector<ksiazka*>& ksiazki);
+void sort_autor(vector<ksiazka*>& ksiazki);
+void sort_tytul(vector<ksiazka*>& ksiazki);

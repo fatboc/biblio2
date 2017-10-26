@@ -3,9 +3,9 @@
 int main()
 {
 
-        vector <kategoria*> kategorie;
-        vector <ksiazka*> ksiazki;
-        vector <klient*> klienci;
+    vector <kategoria*> kategorie;
+    vector <ksiazka*> ksiazki;
+    vector <klient*> klienci;
     int x=0;
     if(init()&&(import(kategorie, klienci, ksiazki)))
         /*vector <kategoria> *kategorie = import_cat(kategorie);
