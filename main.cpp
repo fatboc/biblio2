@@ -7,7 +7,7 @@ int main()
     vector <ksiazka*> ksiazki;
     vector <klient*> klienci;
     int x=0;
-    if(init()&&(import(kategorie, klienci, ksiazki)))
+    if(init()&&(data_import(kategorie, klienci, ksiazki)))
         /*vector <kategoria> *kategorie = import_cat(kategorie);
         vector <ksiazka> *ksiazki = import_book(ksiazki);
         vector <klient> *klienci  = import_client(klienci);*/

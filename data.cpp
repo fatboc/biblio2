@@ -91,7 +91,7 @@ char ** cat_choices(vector <kategoria*> &kategorie)
     return elo;
 }
 
-char ** book_choices(vector <ksiazka*> ksiazki)
+char ** book_choices(vector <ksiazka*>& ksiazki)
 {
     string tmp;
     char n[4];
@@ -115,7 +115,7 @@ char ** book_choices(vector <ksiazka*> ksiazki)
     return elo;
 }
 
-char ** client_choices(vector <klient*> klienci)
+char ** client_choices(vector <klient*>& klienci)
 {
     string tmp;
     char n[4];
@@ -141,7 +141,7 @@ char ** client_choices(vector <klient*> klienci)
     return elo;
 }
 
-int import(vector <kategoria*> &kategorie, vector <klient*> &klienci, vector <ksiazka*> &ksiazki)
+int data_import(vector <kategoria*> &kategorie, vector <klient*> &klienci, vector <ksiazka*> &ksiazki)
 {
     ifstream in1("kategorie");
     ifstream in2("ksiazki");
@@ -162,8 +162,7 @@ int import(vector <kategoria*> &kategorie, vector <klient*> &klienci, vector <ks
         ;
         kategorie.push_back(new_cat);
     }
-    tablica = cat_choices(kategorie);
-    for(int i=0; i<kategorie.size(); i++) printf("%s\n", tablica[i]);
+
     in1.close();
 
     while (!in2.eof())
@@ -189,8 +188,11 @@ int import(vector <kategoria*> &kategorie, vector <klient*> &klienci, vector <ks
         new_book->pozyczona = 0;
         new_book->wypozyczajacy = NULL;
         in2.ignore(numeric_limits<streamsize>::max(), '\n');
-        ksiazki.push_back(new_book);
+        if(new_book->tytul!=""&&new_book->autor!=""&&new_book->id!=0)
+            ksiazki.push_back(new_book);
+        else delete new_book;
     }
+
     in2.close();
 
 
@@ -204,8 +206,24 @@ int import(vector <kategoria*> &kategorie, vector <klient*> &klienci, vector <ks
         new_client->id = atoi(id.c_str());
         getline(in3, new_client->telefon);
         getline(in3, new_client->adres);
+        getline(in3, id);
+        if(new_client->imie!="")
+        for(int i=0; i<atoi(id.c_str()); i++){
+            string tmp;
+            getline(in3, tmp);
+            int n = atoi(tmp.c_str());
+            new_client->pozyczone.push_back(ksiazki[n]);
+            ksiazki[n]->dostepnosc = false;
+            ksiazki[n]->wypozyczajacy = new_client;
+            string czas;
+            getline(in3, czas);
+            ksiazki[n]->pozyczona = atoi(czas.c_str());
+        }
         in3.ignore(numeric_limits<streamsize>::max(), '\n');
-        klienci.push_back(new_client);
+        if(new_client->imie!=""&&new_client->nazwisko!=""&&new_client->id!=0)
+            klienci.push_back(new_client);
+        else
+         delete new_client;
     }
     in3.close();
 
@@ -220,11 +238,6 @@ char * trim(char * text)
             text[i] = '\0';
 
     return (text);
-}
-
-void add_book()
-{
-
 }
 
 void sort_nazwa(vector<kategoria *>& kategorie)
@@ -374,4 +387,117 @@ size_t ksiazka::wyszukaj(string text)
 bool ksiazka::check()
 {
     return dostepnosc;
+}
+
+bool kategoria::check(){
+    return true;
+}
+
+bool klient::check(){
+    if (pozyczone.size()==0)
+        return true;
+    else
+        return  false;
+}
+
+int data_export(vector<kategoria*>& kategorie, vector<klient*>& klienci, vector<ksiazka*>& ksiazki){
+
+    ofstream out1("kategorie");
+    ofstream out2("ksiazki");
+    ofstream out3("klienci");
+
+    int j=0;
+
+    if(!out1.is_open()||!out2.is_open()||!out3.is_open())
+        return -1;
+
+    for (vector<kategoria*>::iterator i=kategorie.begin(); i!=kategorie.end(); ++i, ++j){
+        out1 << kategorie[j]->nazwa << endl;
+        out1 << kategorie[j]->symbol << endl;
+        out1 << endl;
+    }
+
+    /*while (!out2.eof())
+    {
+        ksiazka *new_book = new ksiazka;
+        string kat, id;
+        bool s;
+        getline(out2, new_book->tytul);
+        getline(out2, new_book->autor);
+        getline(out2, id);
+        getline(out2, new_book->rok_wydania);
+        getline(out2, kat);
+        new_book->id = atoi(id.c_str());
+        new_book->dostepnosc = true;
+        int j=0;
+        for (vector<kategoria*>::iterator n=kategorie.begin(); n!=kategorie.end(); ++n, ++j)
+            if(kategorie[j]->cat_find(kat))
+            {
+                new_book->kat = kategorie[j];
+                kategorie[j]->nalezace.push_back(new_book);
+                break;
+            }
+        new_book->pozyczona = 0;
+        new_book->wypozyczajacy = NULL;
+        out2.ignore(numeric_limits<streamsize>::max(), '\n');
+        ksiazki.push_back(new_book);
+    }
+    out2.close();*/
+j=0;
+for (vector<ksiazka*>::iterator i=ksiazki.begin(); i!=ksiazki.end(); ++i, ++j){
+        out2 << ksiazki[j]->tytul << endl;
+        out2 << ksiazki[j]->autor << endl;
+        out2 << ksiazki[j]->id << endl;
+        out2 << ksiazki[j]->rok_wydania << endl;
+        out2 << ksiazki[j]->kat->symbol << endl;
+
+        out2 << endl;
+    }
+    out2.close();
+
+
+   /* while (!out3.eof())
+    {
+        klient *new_client  = new klient;
+        getline(out3, new_client->imie);
+        getline(out3, new_client->nazwisko);
+        string id;
+        getline(out3, id);
+        new_client->id = atoi(id.c_str());
+        getline(out3, new_client->telefon);
+        getline(out3, new_client->adres);
+        getline(out3, id);
+        for(int i=0; i<atoi(id.c_str()); i++){
+            string tmp;
+            getline(out3, tmp);
+            int n = atoi(tmp.c_str());
+            new_client->pozyczone.push_back(ksiazki[n]);
+            ksiazki[n]->dostepnosc = false;
+            ksiazki[n]->wypozyczajacy = new_client;
+            string czas;
+            getline(out3, czas);
+            ksiazki[n]->pozyczona = atoi(czas.c_str());
+        }
+        out3.ignore(numeric_limits<streamsize>::max(), '\n');
+        klienci.push_back(new_client);
+    }
+    out3.close();*/
+    j=0;
+for (vector<klient*>::iterator i=klienci.begin(); i!=klienci.end(); ++i, ++j){
+        out3 << klienci[j]->imie << endl;
+        out3 << klienci[j]->nazwisko<< endl;
+        out3 << klienci[j]->id << endl;
+        out3 << klienci[j]->pozyczone.size() << endl;
+        int m=0;
+        for (vector<ksiazka*>::iterator n=klienci[j]->pozyczone.begin(); n!=klienci[j]->pozyczone.end(); ++n, ++m){
+            out3 << klienci[j]->pozyczone[m]->id << endl;
+            out3 << (int) klienci[j]->pozyczone[m]->pozyczona << endl;
+        }
+
+        out3 << endl;
+    }
+    out3.close();
+
+
+    return 1;
 }

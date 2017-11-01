@@ -105,6 +105,7 @@ int menu_create(WINDOW * menu_window, char * choices[], int n, char * header)
     return x;
 }
 
+
 int menu_main(vector <kategoria*> &kategorie, vector <klient*> &klienci, vector <ksiazka*> &ksiazki)
 {
     WINDOW * menu_window;
@@ -134,9 +135,8 @@ int menu_main(vector <kategoria*> &kategorie, vector <klient*> &klienci, vector 
         break;
 
     case 3:
-        zapisz();
+        zapisz(kategorie, ksiazki, klienci);
         break;
-
 
     case 4:
         break;
@@ -222,19 +222,24 @@ int dialog(char * choices[], int n, char * header, char * text)
 
 }
 
-int zapisz()
+int zapisz(vector<kategoria*> &kategorie, vector<ksiazka*> &ksiazki, vector<klient*> &klienci)
 {
-//wywoluje funkcje "" i wyswietla dialog o pomyslnosci zapisu
+//wywoluje funkcje data_export() i wyswietla dialog o pomyslnosci zapisu
 
     char *opcje[] = {"OK"};
-    dialog(opcje, 1, "ZAPISZ", "Zapisano pomyslnie.");
+    if(data_export(kategorie, klienci, ksiazki))
+        dialog(opcje, 1, "ZAPISZ", "Zapisano pomyslnie.");
+    else
+        dialog(opcje, 1, "ZAPISZ", "Blad zapisu.");
 
     return 0;
 }
 
-int usun()
+
+template <typename T>
+int usun(vector<T*>& items, int pos)
 {
-//wywoluje funkcje "" i wyswietla dialog o pomyslnosci zapisu
+//usuwa i wyswietla dialog o pomyslnosci zapisu
 
     int x;
 
@@ -242,7 +247,19 @@ int usun()
     char *opcje2[] = {"TAK", "NIE"};
     x = dialog(opcje2, 2, "USUN", "Czy chcesz usunac rekord?");
     if (x==0)
+    {
+        T * tmp = items[pos];
+        if(tmp->check())
+        {
+            int n=0;
+            typename vector<T*>::iterator i;
+            for (i=items.begin(); i!=items.end(); ++i, ++n)
+                if(n==pos) break;
+            items.erase(i);
+            delete tmp;
+        }
         dialog(opcje1, 1, "USUN", "Rekord usuniety.");
+    }
 
     return x;
 }
@@ -442,7 +459,7 @@ int menu_kategorie(WINDOW * window, vector <kategoria*>& kategorie)
                 }
                 case 1:
                 {
-                    if(usun()==1)
+                    if(usun(kategorie, result-1)==1)
                         x = -1;
                     else
                         menu_kategorie(window, kategorie);
@@ -533,7 +550,7 @@ int menu_klienci(WINDOW * window, vector <klient*> &klienci)
                 }
                 case 1:
                 {
-                    if(usun()==1)
+                    if(usun(klienci, result-1)==1)
                         x = -1;
                     else
                         menu_klienci(window, klienci);
@@ -588,9 +605,15 @@ int menu_klienci(WINDOW * window, vector <klient*> &klienci)
             break;
         }
         case -4:
+        {
             add_client(klienci);
+            char * ok[] = {"OK"};
+            char text[4];
+            sprintf(text, "%d.", klienci.size());
+            dialog(ok, 1, "ELO", text);
             menu_klienci(window, klienci);
             break;
+        }
 
         case -5:
             check =0;
@@ -645,7 +668,7 @@ int menu_ksiazki(WINDOW * window, vector <ksiazka*> &ksiazki, vector <kategoria*
                 }
                 case 1:
                 {
-                    if(usun()==1)
+                    if(usun(ksiazki, result-1)==1)
                         x = -1;
                     else
                         menu_ksiazki(window, ksiazki, kategorie, klienci);
@@ -657,13 +680,14 @@ int menu_ksiazki(WINDOW * window, vector <ksiazka*> &ksiazki, vector <kategoria*
                     {
                         vector<klient*> results;
                         int res = client_search(results, klienci, 0);
-                        if(res>0){
-                        ksiazki[result-1]->wypozyczajacy = klienci[res-1];
-                        ksiazki[result-1]->pozyczona = time(0);
-                        ksiazki[result-1]->dostepnosc = false;
-                        klienci[res-1]->pozyczone.push_back(ksiazki[result-1]);
-                        char * ok[] = {"OK"};
-                        dialog(ok, 1, "WYPOZYCZ", "Pozycja wypozyczona.");
+                        if(res>0)
+                        {
+                            ksiazki[result-1]->wypozyczajacy = klienci[res-1];
+                            ksiazki[result-1]->pozyczona = time(0);
+                            ksiazki[result-1]->dostepnosc = false;
+                            klienci[res-1]->pozyczone.push_back(ksiazki[result-1]);
+                            char * ok[] = {"OK"};
+                            dialog(ok, 1, "WYPOZYCZ", "Pozycja wypozyczona.");
                         }
                     }
 
@@ -678,7 +702,7 @@ int menu_ksiazki(WINDOW * window, vector <ksiazka*> &ksiazki, vector <kategoria*
                             ksiazki[result-1]->pozyczona = 0;
                             ksiazki[result-1]->dostepnosc = true;
                             char * ok[] = {"OK"};
-                        dialog(ok, 1, "ZWROC", "Pozycja zwrocona.");
+                            dialog(ok, 1, "ZWROC", "Pozycja zwrocona.");
 
                         }
                     }
@@ -1243,20 +1267,20 @@ int cat_search(vector <kategoria*>& kategorie)
 
         char ** list_choices = cat_choices(results);
 
-        char * fields[] = {"Symbol", "Nazwa"};
-        int result, x=-1;
+        int result;
 
         result = list_view("WYNIKI", list_choices, 2, "#   Symbol   Nazwa");
 
         return result;
 
     }
+    return (-5);
 }
 
 
 int book_search(vector <ksiazka*>& results, vector <ksiazka*>& ksiazki, int mode)
 {
-int result;
+    int result;
     if(mode==0)
     {
         string text = sdialog();
@@ -1287,11 +1311,11 @@ int result;
     {
         for (int i=0; i<ksiazki.size(); i++)
         {
-                    if (time(0)-ksiazki[i]->pozyczona>60)
-                    {
-                        results.push_back(ksiazki[i]);
-                    }
-                }
+            if (time(0)-ksiazki[i]->pozyczona>60)
+            {
+                results.push_back(ksiazki[i]);
+            }
+        }
     }
 
     else if(mode==3)
@@ -1306,18 +1330,19 @@ int result;
     char ** list_choices = book_choices(results);
 
 
-    if(results.size()==0){
+    if(results.size()==0)
+    {
         char *ok[] = {"OK"};
         dialog(ok, 1, "WYNIKI", "Brak wynikow.");
         result = -5;
-        }
+    }
     return result;
 }
 
 int client_search(vector <klient*> & results, vector <klient*>& klienci, int mode)
 {
 
-char * ok[]={"OK"};
+    char * ok[]= {"OK"};
     if(mode==0)
     {
         string text = sdialog();
@@ -1345,14 +1370,14 @@ char * ok[]={"OK"};
     {
         for (int i=0; i<klienci.size(); i++)
         {
-                for (int j=0; j<klienci[i]->pozyczone.size(); j++)
+            for (int j=0; j<klienci[i]->pozyczone.size(); j++)
+            {
+                if (time(0)-klienci[i]->pozyczone[j]->pozyczona>60)
                 {
-                    if (time(0)-klienci[i]->pozyczone[j]->pozyczona>60)
-                    {
-                        results.push_back(klienci[i]);
-                    }
+                    results.push_back(klienci[i]);
                 }
             }
+        }
     }
 
 
@@ -1360,11 +1385,13 @@ char * ok[]={"OK"};
 
     int result;
 
-    if(results.size()==0){
+    if(results.size()==0)
+    {
         dialog(ok, 1, "WYNIKI", "Brak wynikow.");
         result = -5;
-        }
-    else if(mode==0){
+    }
+    else if(mode==0)
+    {
         char ** list_choices = client_choices(results);
         result = list_view("WYNIKI", list_choices, results.size(), "#   Imie   Nazwisko");
     }
@@ -1406,10 +1433,11 @@ int add_book(vector <ksiazka*> &ksiazki, vector <kategoria *>& kategorie)
         {
             delete new_book;
             dialog(ok, 1, "NOWY", "Blad zapisu.");
-            return -1;
+
         }
 
     }
+     return -1;
 }
 
 int add_cat(vector <kategoria *>& kategorie)
@@ -1429,6 +1457,8 @@ int add_cat(vector <kategoria *>& kategorie)
         dialog(ok, 1, "NOWY", "Zapisano pomyslnie.");
         return 0;
     }
+
+    return(-1);
 }
 
 int add_client(vector <klient*>& klienci)
@@ -1446,10 +1476,20 @@ int add_client(vector <klient*>& klienci)
 
     if(item_form(new_client, 4, "NOWY", fields, data)==1)
     {
-        new_client->id = klienci.size()+1;
+        int n=0, m=0;
+        for(vector<klient*>::iterator i=klienci.begin(); i!=klienci.end(); ++i, ++m)
+        {
+            if(klienci[m]->id>n)
+            {
+                n=klienci[m]->id +1;
+                new_client->id = n;
+            }
+        }
         klienci.push_back(new_client);
         dialog(ok, 1, "NOWY", "Zapisano pomyslnie.");
         return 0;
     }
+
+    return(-1);
 }
 

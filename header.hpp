@@ -73,7 +73,7 @@ int init();
 int endall();
 int menu_create(char*, int, char*);
 int menu_main(vector <kategoria*>&, vector <klient*>&, vector <ksiazka*>&);
-int zapisz();
+int zapisz(vector<kategoria*>&, vector<ksiazka*>&, vector<klient*>&);
 int list_view(char*, char *, int, char *);
 int dialog(char *, int, char *, char *);
 int sort_menu(int);
@@ -85,7 +85,8 @@ int menu_ksiazki(WINDOW * window, vector <ksiazka*>&, vector <kategoria*>&, vect
 template <typename T>
 int item_details(WINDOW * window, T *item, char *, int mode, char **);
 int zapisz();
-int usun();
+template <typename T>
+int usun(vector<T*>&, int);
 template <typename T>
 int item_form(T *item, int, char*, char**, const char **);
 string sdialog();
@@ -97,13 +98,11 @@ int add_cat(vector <kategoria *>&);
 int add_client(vector <klient*> &);
 
 //data.cpp
-vector<kategoria> * import_cat(vector <kategoria>*);
-vector<klient> * import_client(vector <klient>*);
-vector<ksiazka> * import_book(vector <ksiazka>*);
-int import(vector <kategoria*> &, vector <klient*> &, vector <ksiazka*> &);
+
+int data_import(vector <kategoria*> &, vector <klient*> &, vector <ksiazka*> &);
 char ** cat_choices(vector <kategoria*>&);
-char ** book_choices(vector <ksiazka*>);
-char ** client_choices(vector <klient*>);
+char ** book_choices(vector <ksiazka*>&);
+char ** client_choices(vector <klient*>&);
 char * trim(char *);
 void sort_nazwa(vector<kategoria *>&);
 void sort_symbol(vector<kategoria *>&);
@@ -113,3 +112,4 @@ void sort_nazwisko(vector<klient*>& klienci);
 void sort_bid(vector<ksiazka*>& ksiazki);
 void sort_autor(vector<ksiazka*>& ksiazki);
 void sort_tytul(vector<ksiazka*>& ksiazki);
+int data_export(vector<kategoria*>&, vector<klient*>&, vector<ksiazka*>&);
